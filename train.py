@@ -33,26 +33,22 @@ def loss_batch_scaled(model, loss_func, xb, yb, opt=None, scaler=None):
     return loss, len(xb)
 
 
-def test_model(data_folder, model, loss_func, dev="cpu", scaler=None):
-    test_dl = data_loader_wind_us.get_test_loader(data_folder,
-                                               batch_size=64,
-                                               num_workers=4,
-                                               pin_memory=True if dev == torch.device("cuda") else False)
-    # Calc validation loss
-    test_loss = torch.zeros(3, device=dev)
-    test_num = 0
-    model.eval()
-    with torch.no_grad():
-        for xb, yb in tqdm(test_dl, desc="Test"):
-            if scaler is None:
-                loss, num = loss_batch(model, loss_func, xb.to(dev), yb.to(dev))
-            else:
-                loss, num = loss_batch_scaled(model, loss_func, xb.to(dev), yb.to(dev), scaler=scaler)
-            test_loss += torch.sum(loss, dim=0)
-            test_num += num
-        test_loss /= test_num
+def get_mae(pred,y):
+    
+    diff = (y-pred).detach().numpy()
+    mae = np.sum(np.absolute(diff)) / diff.shape[0]
+    
+    return mae
 
-    print(f"Test loss: {test_loss}")
+
+def plot_figure(pred,y):
+
+    plt.figure(figsize=(14, 8))
+    size = pred.shape[0]
+    plt.plot(range(size), pred.detach().numpy(), label='pred')
+    plt.plot(range(len(y)), y, label='true')
+    plt.legend()
+    plt.show()   
 
 
 def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num_cities, num_features, city_idx=None,
@@ -108,6 +104,9 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
             loss, num = loss_batch(model, loss_func, xb.to(dev), yb.to(dev), opt)
             train_loss += loss
             total_num += num
+            
+            train_pred = model(xb)
+            train_mae = get_mae(train_pred[:,0], yb[:,0])
 
         train_loss /= total_num
 
@@ -120,8 +119,14 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
                 loss, num = loss_batch(model, loss_func, xb.to(dev), yb.to(dev))
                 val_loss += loss
                 val_num += num
+                
+                valid_pred = model(xb)
+                valid_mae = get_mae(valid_pred[:,0], yb[:,0])
+                
             val_loss /= val_num
-        pbar.set_postfix({'train_loss': train_loss, 'val_loss': val_loss})
+                
+            
+        pbar.set_postfix({'train_loss': train_mae, 'val_loss': valid_mae})
         # Save the model with the best validation loss
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -142,7 +147,7 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
                   f"models/checkpoints/best_val_loss_model_{model.__class__.__name__}.pt") 
     
 
-
+ 
 
 
 if __name__ == "__main__":
@@ -152,27 +157,21 @@ if __name__ == "__main__":
     print("Weather dataset. Step: ", 4)
     data = "../processed_dataset/dataset_tensor.npy"
     
-    # train_wind_us(data, num_cities=29, num_features=11, city_idx=0, feature_idx=4, epochs=1, input_timesteps=6,
-                  # prediction_timestep=4, dev=dev, earlystopping=20)
-
-
+    train_wind_us(data, num_cities=29, num_features=11, city_idx=0, feature_idx=4, epochs=2, input_timesteps=6,
+                  prediction_timestep=4, dev=dev, earlystopping=20)
 
 
     ### Test the newly trained model ###
     # load the model architecture and the weights
-    # loaded = torch.load("models/wind_model.pt")
-
     loaded = torch.load("models/checkpoints/best_val_loss_model_MultidimConvNetwork.pt")
     model = loaded["model"]
     model.load_state_dict(loaded["state_dict"])
     model.to(dev)
-    print(model)
-    
-    
+        
     train_dl, valid_dl = data_loader_wind_us.get_train_valid_loader(data,
                                                                     input_timesteps=6,
                                                                     prediction_timestep=4,
-                                                                    batch_size=500,
+                                                                    batch_size=64,
                                                                     random_seed=1337,
                                                                     city_idx=0,
                                                                     feature_idx=4,
@@ -180,32 +179,14 @@ if __name__ == "__main__":
                                                                     shuffle=False,
                                                                     num_workers=16,
                                                                     pin_memory=True if dev == torch.device("cuda") else False)
-    
+
+
     for x,y in valid_dl:
-        pred = model(x)
-        mae = (y[:,0]-pred[:,0])
-        np_mae = mae.detach().numpy()
-        abs = np.absolute(np_mae)
-        # print(np_mae)
-        print(abs)
-        sum = np.sum(abs)/500
-        print(sum)
-        print(pred[:,0])
-        print(pred[:,0].shape)
         
-        plt.figure(figsize=(14, 8))
-        size = pred.shape[0]
-        plt.plot(range(size), pred[:,0].detach().numpy(), label='pred')
-        plt.plot(range(len(y)), y[:,0], label='true')
-        plt.legend()
-        plt.show()    
+        pred = model(x)
+        mae = get_mae(pred[:,0], y[:,0])
+        print(mae)
+        plot_figure(pred[:,0], y[:,0])        
+        
         
         exit()
-    # Plot:
-     
-    
-    # # get the scaler of the corresponding dataset
-    # scaler = torch.as_tensor(sio.loadmat(f"{folder}Wind_data/lag=4/scale4.mat")["y_max_tr"], device=dev)
-    # test_model(folder+data, model, F.l1_loss, dev, scaler=scaler)
-
-
