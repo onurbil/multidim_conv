@@ -9,41 +9,6 @@ import scipy.io as sio
 from torchsummary import summary
 
 
-class FlatLayer(nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x):
-        return x.view(x.size(0), -1)
-
-
-def count_parameters(model):
-    print("model_summary")
-    print("Layer_name" + "\t" * 7 + "Number of Parameters")
-    print("=" * 100)
-    model_parameters = [layer for layer in model.parameters() if layer.requires_grad]
-    layer_name = [child for child in model.children()]
-    j = 0
-    total_params = 0
-    print("\t" * 10)
-    for i in layer_name:
-        try:
-            bias = (i.bias is not None)
-        except:
-            bias = False
-        if not bias:
-            param = model_parameters[j].numel() + model_parameters[j + 1].numel()
-            j = j + 2
-        else:
-            param = model_parameters[j].numel()
-            j = j + 1
-        print(str(i) + "\t" * 3 + str(param))
-        total_params += param
-    print("=" * 100)
-    print(f"Total Params:{total_params}")
-    # return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-
 def loss_batch(model, loss_func, xb, yb, opt=None):
     loss = loss_func(model(xb), yb)
 
