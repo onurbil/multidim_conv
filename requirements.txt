@@ -1,7 +1,6 @@
-tensorboard
-pytorch==1.4.0
-tqdm
-einops==0.2.0
-scipy
-torchsummary
-numpy
+scipy==1.4.1
+numpy==1.19.0
+torch==1.6.0
+torchsummary==1.5.1
+tqdm==4.47.0
+einops==0.3.0

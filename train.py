@@ -7,6 +7,8 @@ from models import wind_models
 from tqdm import tqdm
 import scipy.io as sio
 from torchsummary import summary
+import matplotlib.pyplot as plt
+
 
 
 def loss_batch(model, loss_func, xb, yb, opt=None):
@@ -133,14 +135,26 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
                     break
 
 
+    # Plot:
+     
+    # plt.figure(figsize=(14, 8))
+    # plt.plot(range(pred.size), pred.flatten(), label='pred')
+    # plt.plot(range(len(y_valid)), y_valid, label='true')
+    # plt.legend()
+    # plt.show()
+
+
+
 if __name__ == "__main__":
     dev = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     # torch.backends.cudnn.benchmark = True
 
     print("Weather dataset. Step: ", 4)
     data = "../processed_dataset/dataset_tensor.npy"
-    train_wind_us(data, num_cities=29, num_features=11, city_idx=4, epochs=5, input_timesteps=6,
+    train_wind_us(data, num_cities=29, num_features=11, city_idx=0, feature_idx=4, epochs=150, input_timesteps=6,
                   prediction_timestep=4, dev=dev, earlystopping=20)
+
+
 
 
     ### Test the newly trained model ###
