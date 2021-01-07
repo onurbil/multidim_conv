@@ -24,7 +24,7 @@ class wind_dataset_us(Dataset):
         self.x = torch.as_tensor(x).float()
 
     def __getitem__(self, item):
-        # Target is the wind speed of all (7) cities. Wind speed is the first entry of the last dimension
+
         x = self.x[item:item + self.inputTimesteps]
         if self.city_idx and self.feature_idx:
             y = self.x[item + self.inputTimesteps + self.predictTimestep, self.city_idx, self.feature_idx]

@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     print("Weather dataset. Step: ", 4)
     data = "../processed_dataset/dataset_tensor.npy"
-    train_wind_us(data, num_cities=29, num_features=11, city_idx=4, epochs=100, input_timesteps=6,
+    train_wind_us(data, num_cities=29, num_features=11, city_idx=4, epochs=5, input_timesteps=6,
                   prediction_timestep=4, dev=dev, earlystopping=20)
 
 
