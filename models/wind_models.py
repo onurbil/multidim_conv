@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
 from torch import nn
-from models.attention_augmented_conv import AugmentedConv
 from models.layers import DepthwiseSeparableConv
 from einops import rearrange
 
