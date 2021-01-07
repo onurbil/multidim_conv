@@ -65,6 +65,20 @@ class CNNDS2DDeconvWind_DK(nn.Module):
         return out
 
 
+class CNN2DWind_US(nn.Module):
+    def __init__(self, in_channels, output_channels, feature_maps, hidden_neurons=128):
+        super(CNN2DWind_US, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=in_channels, out_channels=feature_maps, kernel_size=2)
+        # Correctly calculate input features (depends on conv2d)
+        # ((W−F+2P)/S)+1 --> (((6x6)-2+0)/1)+1 = (5x5)
+        self.dd = DoubleDense(feature_maps * 6 * 5, hidden_neurons=hidden_neurons, output_channels=output_channels)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        # Maybe flatten
+        x = self.dd(x.view(x.size(0), -1))
+        return x
+
 class CNN2DWind_NL(nn.Module):
     def __init__(self, in_channels, output_channels, feature_maps, hidden_neurons=128):
         super(CNN2DWind_NL, self).__init__()
@@ -167,14 +181,22 @@ class MultidimConv(nn.Module):
 
     def forward(self, x):
         x_normal = self.normal(x)
-        x_horizontal = self.horizontal(rearrange(x, "b c h w -> b h c w"))  # x.permute(0,2,1,3)
-        x_vertical = self.vertical(rearrange(x, "b c h w -> b w c h"))  # x.permute(0,3,1,2)
+
+        # r_re = rearrange(x, "b c h w -> b h c w")
+        r_re = rearrange(x, "b c h w -> b w h c")
+        x_horizontal = self.horizontal(r_re)  # x.permute(0,2,1,3)
+
+        # v_re = rearrange(x, "b c h w -> b w c h")
+        v_re = rearrange(x, "b c h w -> b h c w")
+        x_vertical = self.vertical(v_re)  # x.permute(0,3,1,2)
+
         x_normal = F.relu(self.bn_normal(x_normal))
         x_horizontal = F.relu(self.bn_horizontal(x_horizontal))
         x_vertical = F.relu(self.bn_vertical(x_vertical))
+
         output = torch.cat([rearrange(x_normal, "b c h w -> b (c h w)"),
-                            rearrange(x_horizontal, "b c h w -> b (c h w)"),
-                            rearrange(x_vertical, "b c h w -> b (c h w)")
+                            rearrange(x_horizontal, "b w h c -> b (c h w)"),
+                            rearrange(x_vertical, "b h c w -> b (c h w)")
                             ], dim=1)
         return output
 
