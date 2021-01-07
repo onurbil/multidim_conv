@@ -144,7 +144,7 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
                  'state_dict': model.state_dict(), 
                  'optimizer_state_dict': opt.state_dict(), 
                  'val_loss': val_loss, 'train_loss': train_loss }, 
-                  f"models/checkpoints/best_val_loss_model_{model.__class__.__name__}.pt") 
+                  f"models/checkpoints/model_{model.__class__.__name__}.pt") 
     
 
  
@@ -157,13 +157,13 @@ if __name__ == "__main__":
     print("Weather dataset. Step: ", 4)
     data = "../processed_dataset/dataset_tensor.npy"
     
-    train_wind_us(data, num_cities=29, num_features=11, city_idx=0, feature_idx=4, epochs=2, input_timesteps=6,
+    train_wind_us(data, num_cities=29, num_features=11, city_idx=0, feature_idx=4, epochs=1, input_timesteps=6,
                   prediction_timestep=4, dev=dev, earlystopping=20)
 
 
     ### Test the newly trained model ###
     # load the model architecture and the weights
-    loaded = torch.load("models/checkpoints/best_val_loss_model_MultidimConvNetwork.pt")
+    loaded = torch.load("models/checkpoints/model_MultidimConvNetwork.pt")
     model = loaded["model"]
     model.load_state_dict(loaded["state_dict"])
     model.to(dev)
