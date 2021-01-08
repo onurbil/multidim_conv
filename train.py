@@ -61,17 +61,19 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
                                                                     prediction_timestep=prediction_timestep,
                                                                     batch_size=64,
                                                                     random_seed=1337,
+                                                                    city_num=num_cities,
                                                                     city_idx=city_idx,
+                                                                    feature_num=num_features,
                                                                     feature_idx=feature_idx,
                                                                     valid_size=0.1,
                                                                     shuffle=True,
                                                                     num_workers=16,
                                                                     pin_memory=True if dev == torch.device("cuda") else False)
-    if city_idx and feature_idx:
+    if city_idx is not None and feature_idx is not None:
         num_output_channel = 1
-    elif city_idx:
+    elif city_idx is not None:
         num_output_channel = num_features
-    elif feature_idx:
+    elif feature_idx is not None:
         num_output_channel = num_cities
     else:
         num_output_channel = num_cities * num_features
@@ -106,7 +108,7 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
             total_num += num
             
             train_pred = model(xb)
-            train_mae = get_mae(train_pred[:,0], yb[:,0])
+            train_mae = get_mae(train_pred, yb)
 
         train_loss /= total_num
 
@@ -121,7 +123,7 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
                 val_num += num
                 
                 valid_pred = model(xb)
-                valid_mae = get_mae(valid_pred[:,0], yb[:,0])
+                valid_mae = get_mae(valid_pred, yb)
                 
             val_loss /= val_num
                 
@@ -157,7 +159,7 @@ if __name__ == "__main__":
     print("Weather dataset. Step: ", 4)
     data = "../processed_dataset/dataset_tensor.npy"
     
-    train_wind_us(data, num_cities=29, num_features=11, city_idx=0, feature_idx=4, epochs=1, input_timesteps=6,
+    train_wind_us(data, num_cities=29, num_features=6, city_idx=None, feature_idx=4, epochs=1, input_timesteps=6,
                   prediction_timestep=4, dev=dev, earlystopping=20)
 
 
@@ -168,25 +170,25 @@ if __name__ == "__main__":
     model.load_state_dict(loaded["state_dict"])
     model.to(dev)
         
-    train_dl, valid_dl = data_loader_wind_us.get_train_valid_loader(data,
-                                                                    input_timesteps=6,
-                                                                    prediction_timestep=4,
-                                                                    batch_size=64,
-                                                                    random_seed=1337,
-                                                                    city_idx=0,
-                                                                    feature_idx=4,
-                                                                    valid_size=0.1,
-                                                                    shuffle=False,
-                                                                    num_workers=16,
-                                                                    pin_memory=True if dev == torch.device("cuda") else False)
+    test_dl = data_loader_wind_us.get_test_loader(data,
+                                                  input_timesteps=6,
+                                                  prediction_timestep=4,
+                                                  batch_size=64,
+                                                  feature_num=6,
+                                                  city_num=29,
+                                                  city_idx=None,
+                                                  feature_idx=4,
+                                                  shuffle=False,
+                                                  num_workers=16,
+                                                  pin_memory=True if dev == torch.device("cuda") else False)
 
 
-    for x,y in valid_dl:
+    for x,y in test_dl:
         
         pred = model(x)
-        mae = get_mae(pred[:,0], y[:,0])
+        mae = get_mae(pred, y)
         print(mae)
-        plot_figure(pred[:,0], y[:,0])        
+        plot_figure(pred, y)
         
         
         exit()

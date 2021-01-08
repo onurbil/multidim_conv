@@ -9,7 +9,10 @@ def get_train_valid_loader(data_dir,
                            prediction_timestep,
                            batch_size,
                            random_seed,
+                           test_size=8813,
+                           city_num=29,
                            city_idx=None,
+                           feature_num=6,
                            feature_idx=None,
                            valid_size=0.1,
                            shuffle=True,
@@ -21,12 +24,12 @@ def get_train_valid_loader(data_dir,
     # load the dataset
     train_dataset = dataset_wind.wind_dataset_us(
         filename=data_dir, inputTimesteps=input_timesteps, predictTimestep=prediction_timestep, train=True,
-        city_idx=city_idx, feature_idx=feature_idx
+        test_size=test_size, city_idx=city_idx, feature_idx=feature_idx, feature_num=feature_num, city_num=city_num
     )
 
     valid_dataset = dataset_wind.wind_dataset_us(
         filename=data_dir, inputTimesteps=input_timesteps, predictTimestep=prediction_timestep, train=True,
-        city_idx=city_idx, feature_idx=feature_idx
+        test_size=test_size, city_idx=city_idx, feature_idx=feature_idx, feature_num=feature_num, city_num=city_num
     )
 
     num_train = len(train_dataset)
@@ -56,13 +59,18 @@ def get_train_valid_loader(data_dir,
 def get_test_loader(data_dir,
                     input_timesteps,
                     prediction_timestep,
-                    CTF,
                     batch_size,
+                    test_size=8813,
                     shuffle=False,
+                    city_num=29,
+                    feature_num=6,
+                    city_idx=None,
+                    feature_idx=None,
                     num_workers=4,
                     pin_memory=False):
     dataset = dataset_wind.wind_dataset_us(
-        filename=data_dir, inputTimesteps=input_timesteps, predictTimestep=prediction_timestep, train=False
+        filename=data_dir, inputTimesteps=input_timesteps, predictTimestep=prediction_timestep, train=False,
+        test_size=test_size, city_idx=city_idx, feature_idx=feature_idx, feature_num=feature_num, city_num=city_num
     )
 
     data_loader = torch.utils.data.DataLoader(

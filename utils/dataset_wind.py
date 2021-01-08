@@ -6,11 +6,12 @@ import numpy as np
 
 
 class wind_dataset_us(Dataset):
-    def __init__(self, filename, inputTimesteps, predictTimestep, train: bool, feature_idx=None, city_idx=None):
+    def __init__(self, filename, inputTimesteps, predictTimestep, train: bool, test_size=8813, feature_num=6,
+                 feature_idx=None, city_num=29, city_idx=None):
 
 
         data = np.load(filename, allow_pickle=True).astype(float)
-        data = data[:, :29, :11]
+        data = data[:, :city_num, :feature_num]
 
         self.inputTimesteps = inputTimesteps
         self.predictTimestep = predictTimestep
@@ -18,19 +19,19 @@ class wind_dataset_us(Dataset):
         self.city_idx = city_idx
 
         if train:
-            x = data[:-8813]
+            x = data[:-test_size]
         else:
-            x = data[-8813:]
+            x = data[-test_size:]
         self.x = torch.as_tensor(x).float()
 
     def __getitem__(self, item):
 
         x = self.x[item:item + self.inputTimesteps]
-        if self.city_idx and self.feature_idx:
+        if self.city_idx is not None and self.feature_idx is not None:
             y = self.x[item + self.inputTimesteps + self.predictTimestep, self.city_idx, self.feature_idx]
-        elif self.city_idx:
+        elif self.city_idx is not None:
             y = self.x[item + self.inputTimesteps + self.predictTimestep, self.city_idx, :]
-        elif self.feature_idx:
+        elif self.feature_idx is not None:
             y = self.x[item + self.inputTimesteps + self.predictTimestep, :, self.feature_idx]
         else:
             y = self.x[item + self.inputTimesteps + self.predictTimestep]
