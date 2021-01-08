@@ -154,7 +154,7 @@ if __name__ == "__main__":
     dev = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     # torch.backends.cudnn.benchmark = True
 
-    print("Weather dataset. Step: ", 4)
+    print("Hourly weather dataset. Step: ", 4)
     
     if train_model:
         train_wind_us(data, num_cities=num_cities, test_size=test_size, num_features=num_features, 
