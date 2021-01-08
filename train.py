@@ -11,8 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-test_size = 500
-
 def loss_batch(model, loss_func, xb, yb, opt=None):
     loss = loss_func(model(xb), yb)
 
@@ -24,19 +22,21 @@ def loss_batch(model, loss_func, xb, yb, opt=None):
     return loss.item(), len(xb)
 
 
-def plot_figure(pred,y):
-
+def plot_figure(pred, y):
     plt.figure(figsize=(14, 8))
-    size = pred.shape[0]
-    plt.plot(range(size), pred.detach().numpy(), label='pred')
-    plt.plot(range(len(y)), y, label='true')
+    # size = pred.shape[0]
+    # plt.plot(range(size), pred.detach().numpy(), label='pred')
+    # plt.plot(range(len(y)), y, label='true')
+    plt.plot(range(len(pred)), pred, label='pred')
+    plt.plot(range(len(y)), y, label='label')
+
     plt.legend()
-    plt.show()   
+    plt.show()
 
 
-def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, test_size, num_cities, num_features, city_idx=None,
+def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, test_size, num_cities, num_features,
+                  city_idx=None,
                   feature_idx=None, dev=torch.device("cpu"), earlystopping=None):
-
     print(f"Device: {dev}")
 
     train_dl, valid_dl = data_loader_wind_us.get_train_valid_loader(data_folder,
@@ -52,7 +52,8 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, tes
                                                                     valid_size=0.1,
                                                                     shuffle=True,
                                                                     num_workers=16,
-                                                                    pin_memory=True if dev == torch.device("cuda") else False)
+                                                                    pin_memory=True if dev == torch.device(
+                                                                        "cuda") else False)
     if city_idx is not None and feature_idx is not None:
         num_output_channel = 1
     elif city_idx is not None:
@@ -64,7 +65,8 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, tes
 
     ### Model definition ###
     model = wind_models.MultidimConvNetwork(channels=input_timesteps, height=num_features, width=num_cities,
-                                            output_channels=num_output_channel, kernels_per_layer=16, hidden_neurons=128)
+                                            output_channels=num_output_channel, kernels_per_layer=16,
+                                            hidden_neurons=128)
 
     # print("Parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
     summary(model, (input_timesteps, num_cities, num_features), device="cpu")
@@ -107,14 +109,14 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, tes
                 val_loss += loss
                 val_num += num
             val_loss /= val_num
-    
+
         pbar.set_postfix({'train_loss': train_loss, 'val_loss': val_loss})
-        
+
         # Save the model with the best validation loss
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             earlystopping_counter = 0
-        
+
         else:
             if earlystopping is not None:
                 earlystopping_counter += 1
@@ -122,53 +124,71 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, tes
                     print(f"Stopping early --> val_loss has not decreased over {earlystopping} epochs")
                     break
 
-
-    torch.save({ 'model': model, 'epoch': epoch, 
-                 'state_dict': model.state_dict(), 
-                 'optimizer_state_dict': opt.state_dict(), 
-                 'val_loss': val_loss, 'train_loss': train_loss }, 
-                  f"models/checkpoints/model_{model.__class__.__name__}.pt") 
-    
-
- 
+    torch.save({'model': model, 'epoch': epoch,
+                'state_dict': model.state_dict(),
+                'optimizer_state_dict': opt.state_dict(),
+                'val_loss': val_loss, 'train_loss': train_loss},
+               f"models/checkpoints/model_{model.__class__.__name__}.pt")
 
 
 if __name__ == "__main__":
+
+    num_features = 6
+    num_cities = 29
+    city_idx = 0
+    feature_idx = 4
+
+    input_timesteps = 6
+    prediction_timesteps = 4
+
+    epochs = 1
+    early_stopping = 20
+
+    test_size = 8813
+    display_results_after = 200
+
+    train_model = True
+    data = "../processed_dataset/dataset_tensor.npy"
+    load_model_path = "models/checkpoints/model_MultidimConvNetwork.pt"
+
+
     dev = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     # torch.backends.cudnn.benchmark = True
 
-    print("Weather dataset. Step: ", 4)
-    data = "../processed_dataset/dataset_tensor.npy"
-    
-    # train_wind_us(data, num_cities=29, test_size=test_size, num_features=11, city_idx=0, feature_idx=4, epochs=200, input_timesteps=6,
-                  # prediction_timestep=4, dev=dev, earlystopping=20)
+    print("Weather dataset. Step: ", prediction_timesteps)
 
+    if train_model:
+        train_wind_us(data, num_cities=num_cities, test_size=test_size, num_features=num_features, city_idx=city_idx,
+                      feature_idx=feature_idx, epochs=epochs, input_timesteps=input_timesteps,
+                      prediction_timestep=prediction_timesteps, dev=dev, earlystopping=early_stopping)
 
     ### Test the newly trained model ###
     # load the model architecture and the weights
-    loaded = torch.load("models/checkpoints/model_MultidimConvNetwork.pt")
+    loaded = torch.load(load_model_path)
     model = loaded["model"]
     model.load_state_dict(loaded["state_dict"])
     model.to(dev)
-    
-    test_dl = data_loader_wind_us.get_test_loader(data,
-                                                  input_timesteps=6,
-                                                  prediction_timestep=4,
-                                                  batch_size=test_size,
-                                                  feature_num=11,
-                                                  city_num=29,
-                                                  city_idx=0,
-                                                  feature_idx=4,
-                                                  shuffle=False,
-                                                  num_workers=16,
+
+    test_dl = data_loader_wind_us.get_test_loader(data, input_timesteps=input_timesteps,
+                                                  prediction_timestep=prediction_timesteps, feature_num=num_features,
+                                                  city_num=num_cities, city_idx=city_idx, feature_idx=feature_idx,
+                                                  shuffle=False, num_workers=16, test_size=test_size,
                                                   pin_memory=True if dev == torch.device("cuda") else False)
 
+    preds = []
+    labels = []
+    loss = []
 
-    for x,y in test_dl:
-        
+    for idx, (x, y) in enumerate(test_dl):
+
         test_pred = model(x)
         test_loss = F.l1_loss(test_pred, y)
-        print(test_loss)
-        plot_figure(test_pred, y)
-        # exit()
-        
+        loss.append(test_loss)
+
+        if idx < display_results_after:
+            preds.append(test_pred)
+            labels.append(y)
+
+    print("Test MAE: " + str(test_loss))
+
+    plot_figure(preds, labels)

@@ -59,7 +59,6 @@ def get_train_valid_loader(data_dir,
 def get_test_loader(data_dir,
                     input_timesteps,
                     prediction_timestep,
-                    batch_size,
                     test_size=8813,
                     shuffle=False,
                     city_num=29,
@@ -74,7 +73,7 @@ def get_test_loader(data_dir,
     )
 
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=shuffle,
+        dataset, shuffle=shuffle,
         num_workers=num_workers, pin_memory=pin_memory,
     )
 
