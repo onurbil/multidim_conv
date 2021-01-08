@@ -140,8 +140,8 @@ if __name__ == "__main__":
     print("Weather dataset. Step: ", 4)
     data = "../processed_dataset/dataset_tensor.npy"
     
-    train_wind_us(data, num_cities=29, test_size=test_size, num_features=11, city_idx=0, feature_idx=4, epochs=200, input_timesteps=6,
-                  prediction_timestep=4, dev=dev, earlystopping=20)
+    # train_wind_us(data, num_cities=29, test_size=test_size, num_features=11, city_idx=0, feature_idx=4, epochs=200, input_timesteps=6,
+                  # prediction_timestep=4, dev=dev, earlystopping=20)
 
 
     ### Test the newly trained model ###
@@ -170,6 +170,5 @@ if __name__ == "__main__":
         test_loss = F.l1_loss(test_pred, y)
         print(test_loss)
         plot_figure(test_pred, y)
-        
         exit()
         
