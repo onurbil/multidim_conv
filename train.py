@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-test_size = 500
 
 def loss_batch(model, loss_func, xb, yb, opt=None):
     loss = loss_func(model(xb), yb)
@@ -134,31 +133,52 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, tes
 
 
 if __name__ == "__main__":
+    
+    
+    # Parameters:
+    num_features = 11
+    num_cities = 29
+    city_idx = 0
+    feature_idx = 4
+    epochs = 5
+    test_size = 2500
+    train_model = False
+
+    input_timesteps = 6
+    prediction_timesteps = 4
+    early_stopping = 20
+    data = "../processed_dataset/dataset_tensor.npy"
+    load_model_path = "models/checkpoints/model_MultidimConvNetwork.pt"
+    
+    
     dev = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     # torch.backends.cudnn.benchmark = True
 
     print("Weather dataset. Step: ", 4)
-    data = "../processed_dataset/dataset_tensor.npy"
     
-    # train_wind_us(data, num_cities=29, test_size=test_size, num_features=11, city_idx=0, feature_idx=4, epochs=200, input_timesteps=6,
-                  # prediction_timestep=4, dev=dev, earlystopping=20)
+    if train_model:
+        train_wind_us(data, num_cities=num_cities, test_size=test_size, num_features=num_features, 
+                            city_idx=city_idx, feature_idx=feature_idx, epochs=epochs, 
+                            input_timesteps=input_timesteps, prediction_timestep=prediction_timesteps, 
+                            dev=dev, earlystopping=early_stopping)
 
 
     ### Test the newly trained model ###
     # load the model architecture and the weights
-    loaded = torch.load("models/checkpoints/model_MultidimConvNetwork.pt")
+    loaded = torch.load(load_model_path)
     model = loaded["model"]
     model.load_state_dict(loaded["state_dict"])
     model.to(dev)
     
     test_dl = data_loader_wind_us.get_test_loader(data,
-                                                  input_timesteps=6,
-                                                  prediction_timestep=4,
+                                                  input_timesteps=input_timesteps,
+                                                  prediction_timestep=prediction_timesteps,
                                                   batch_size=test_size,
-                                                  feature_num=11,
-                                                  city_num=29,
-                                                  city_idx=0,
-                                                  feature_idx=4,
+                                                  test_size=test_size,
+                                                  feature_num=num_features,
+                                                  city_num=num_cities,
+                                                  city_idx=city_idx,
+                                                  feature_idx=feature_idx,
                                                   shuffle=False,
                                                   num_workers=16,
                                                   pin_memory=True if dev == torch.device("cuda") else False)
@@ -170,5 +190,4 @@ if __name__ == "__main__":
         test_loss = F.l1_loss(test_pred, y)
         print(test_loss)
         plot_figure(test_pred, y)
-        exit()
         
