@@ -13,32 +13,13 @@ import numpy as np
 
 def loss_batch(model, loss_func, xb, yb, opt=None):
     loss = loss_func(model(xb), yb)
-    
+
     if opt is not None:
         loss.backward()
         opt.step()
         opt.zero_grad()
 
     return loss.item(), len(xb)
-
-
-def loss_batch_scaled(model, loss_func, xb, yb, opt=None, scaler=None):
-    loss = loss_func(model(xb)*scaler, yb*scaler, reduction="none")
-
-    if opt is not None:
-        loss.backward()
-        opt.step()
-        opt.zero_grad()
-
-    return loss, len(xb)
-
-
-def get_mae(pred,y):
-    
-    diff = (y-pred).detach().numpy()
-    mae = np.sum(np.absolute(diff)) / diff.shape[0]
-    
-    return mae
 
 
 def plot_figure(pred,y):
@@ -103,13 +84,12 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
         total_num = 0
 
         for i, (xb, yb) in enumerate(train_dl):
+
             loss, num = loss_batch(model, loss_func, xb.to(dev), yb.to(dev), opt)
+            if loss_func == F.l1_loss:
+                num = 1
             train_loss += loss
             total_num += num
-            
-            train_pred = model(xb)
-            train_mae = get_mae(train_pred, yb)
-
         train_loss /= total_num
 
         # Calc validation loss
@@ -119,16 +99,14 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
         with torch.no_grad():
             for xb, yb in valid_dl:
                 loss, num = loss_batch(model, loss_func, xb.to(dev), yb.to(dev))
+                if loss_func == F.l1_loss:
+                    num = 1
                 val_loss += loss
                 val_num += num
-                
-                valid_pred = model(xb)
-                valid_mae = get_mae(valid_pred, yb)
-                
             val_loss /= val_num
-                
-            
-        pbar.set_postfix({'train_loss': train_mae, 'val_loss': valid_mae})
+    
+        pbar.set_postfix({'train_loss': train_loss, 'val_loss': val_loss})
+        
         # Save the model with the best validation loss
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -159,7 +137,7 @@ if __name__ == "__main__":
     print("Weather dataset. Step: ", 4)
     data = "../processed_dataset/dataset_tensor.npy"
     
-    train_wind_us(data, num_cities=29, num_features=6, city_idx=None, feature_idx=4, epochs=1, input_timesteps=6,
+    train_wind_us(data, num_cities=29, num_features=11, city_idx=0, feature_idx=4, epochs=5, input_timesteps=6,
                   prediction_timestep=4, dev=dev, earlystopping=20)
 
 
@@ -169,14 +147,14 @@ if __name__ == "__main__":
     model = loaded["model"]
     model.load_state_dict(loaded["state_dict"])
     model.to(dev)
-        
+    
     test_dl = data_loader_wind_us.get_test_loader(data,
                                                   input_timesteps=6,
                                                   prediction_timestep=4,
                                                   batch_size=64,
-                                                  feature_num=6,
+                                                  feature_num=11,
                                                   city_num=29,
-                                                  city_idx=None,
+                                                  city_idx=0,
                                                   feature_idx=4,
                                                   shuffle=False,
                                                   num_workers=16,
@@ -185,10 +163,10 @@ if __name__ == "__main__":
 
     for x,y in test_dl:
         
-        pred = model(x)
-        mae = get_mae(pred, y)
-        print(mae)
-        plot_figure(pred, y)
+        test_pred = model(x)
+        test_loss = F.l1_loss(test_pred, y)
+        print(test_loss)
+        plot_figure(test_pred, y)
         
         
         exit()
