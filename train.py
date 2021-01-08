@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+test_size = 500
+
 def loss_batch(model, loss_func, xb, yb, opt=None):
     loss = loss_func(model(xb), yb)
 
@@ -32,7 +34,7 @@ def plot_figure(pred,y):
     plt.show()   
 
 
-def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num_cities, num_features, city_idx=None,
+def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, test_size, num_cities, num_features, city_idx=None,
                   feature_idx=None, dev=torch.device("cpu"), earlystopping=None):
 
     print(f"Device: {dev}")
@@ -42,6 +44,7 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, num
                                                                     prediction_timestep=prediction_timestep,
                                                                     batch_size=64,
                                                                     random_seed=1337,
+                                                                    test_size=test_size,
                                                                     city_num=num_cities,
                                                                     city_idx=city_idx,
                                                                     feature_num=num_features,
@@ -137,7 +140,7 @@ if __name__ == "__main__":
     print("Weather dataset. Step: ", 4)
     data = "../processed_dataset/dataset_tensor.npy"
     
-    train_wind_us(data, num_cities=29, num_features=11, city_idx=0, feature_idx=4, epochs=5, input_timesteps=6,
+    train_wind_us(data, num_cities=29, test_size=test_size, num_features=11, city_idx=0, feature_idx=4, epochs=200, input_timesteps=6,
                   prediction_timestep=4, dev=dev, earlystopping=20)
 
 
@@ -151,7 +154,7 @@ if __name__ == "__main__":
     test_dl = data_loader_wind_us.get_test_loader(data,
                                                   input_timesteps=6,
                                                   prediction_timestep=4,
-                                                  batch_size=64,
+                                                  batch_size=test_size,
                                                   feature_num=11,
                                                   city_num=29,
                                                   city_idx=0,
@@ -168,5 +171,5 @@ if __name__ == "__main__":
         print(test_loss)
         plot_figure(test_pred, y)
         
-        
         exit()
+        

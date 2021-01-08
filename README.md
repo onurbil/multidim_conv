@@ -7,4 +7,5 @@ Application of the ["*multidimensional convolutional neural networks*"](https://
 
 ## Usage
 1. Install the necessary packages from the `requirements.txt`.
-2. Execute `train.py`.
+2. Execute `setup.py` to download and process the dataset.
+3. Execute `train.py` to train the model.
