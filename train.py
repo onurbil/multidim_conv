@@ -27,7 +27,7 @@ def plot_figure(pred,y):
 
     plt.figure(figsize=(14, 8))
     size = pred.shape[0]
-    plt.plot(range(size), pred.detach().numpy(), label='pred')
+    plt.plot(range(size), pred, label='pred')
     plt.plot(range(len(y)), y, label='true')
     plt.legend()
     plt.show()   
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     num_cities = 29
     city_idx = 0
     feature_idx = 4
-    epochs = 5
+    epochs = 200
     test_size = 2500
     train_model = False
 
@@ -188,6 +188,6 @@ if __name__ == "__main__":
         
         test_pred = model(x)
         test_loss = F.l1_loss(test_pred, y)
-        print(test_loss)
-        plot_figure(test_pred, y)
+        print(test_loss.detach().numpy())
+        plot_figure(test_pred.detach().numpy(), y.detach().numpy())
         
