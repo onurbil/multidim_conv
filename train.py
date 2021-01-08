@@ -170,5 +170,5 @@ if __name__ == "__main__":
         test_loss = F.l1_loss(test_pred, y)
         print(test_loss)
         plot_figure(test_pred, y)
-        exit()
+        # exit()
         
