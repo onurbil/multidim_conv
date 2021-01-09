@@ -6,7 +6,7 @@ import numpy as np
 
 
 class wind_dataset_us(Dataset):
-    def __init__(self, filename, inputTimesteps, predictTimestep, train: bool, test_size=8813, feature_num=6,
+    def __init__(self, filename, inputTimesteps, predictTimestep, train: bool, test_size=8813, feature_num=11,
                  feature_idx=None, city_num=29, city_idx=None):
 
 
@@ -17,12 +17,15 @@ class wind_dataset_us(Dataset):
         self.predictTimestep = predictTimestep
         self.feature_idx = feature_idx
         self.city_idx = city_idx
-
+        ignore = 800
         if train:
-            x = data[:-test_size]
+            x = data[:-test_size-ignore]
+            
         else:
-            x = data[-test_size:]
+            x = data[-test_size-ignore:-ignore]
+
         self.x = torch.as_tensor(x).float()
+
 
     def __getitem__(self, item):
 

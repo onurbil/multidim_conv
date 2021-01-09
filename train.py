@@ -48,10 +48,11 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, tes
                                                                     city_idx=city_idx,
                                                                     feature_num=num_features,
                                                                     feature_idx=feature_idx,
-                                                                    valid_size=0.1,
+                                                                    valid_size=0.0177,
                                                                     shuffle=True,
                                                                     num_workers=16,
                                                                     pin_memory=True if dev == torch.device("cuda") else False)
+  
     if city_idx is not None and feature_idx is not None:
         num_output_channel = 1
     elif city_idx is not None:
@@ -140,8 +141,8 @@ if __name__ == "__main__":
     num_cities = 29
     city_idx = 0
     feature_idx = 4
-    epochs = 200
-    test_size = 2500
+    epochs = 250
+    test_size = 8813
     train_model = False
 
     input_timesteps = 6

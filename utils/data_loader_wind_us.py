@@ -32,7 +32,7 @@ def get_train_valid_loader(data_dir,
         test_size=test_size, city_idx=city_idx, feature_idx=feature_idx, feature_num=feature_num, city_num=city_num
     )
 
-    num_train = len(train_dataset)
+    num_train = len(valid_dataset)
     indices = list(range(num_train))
     split = int(np.floor(valid_size * num_train))
 
@@ -43,6 +43,7 @@ def get_train_valid_loader(data_dir,
     train_idx, valid_idx = indices[split:], indices[:split]
     train_sampler = SubsetRandomSampler(train_idx)
     valid_sampler = SubsetRandomSampler(valid_idx)
+
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size, sampler=train_sampler,
