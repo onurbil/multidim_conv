@@ -34,7 +34,8 @@ def plot_figure(pred,y):
 
 
 def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, test_size, num_cities, num_features, city_idx=None,
-                  feature_idx=None, dev=torch.device("cpu"), earlystopping=None):
+                  feature_idx=None, dev=torch.device("cpu"), earlystopping=None, learning_rate=0.001,
+                  kernels_per_layer=16, hidden_neurons=128):
 
     print(f"Device: {dev}")
 
@@ -64,15 +65,15 @@ def train_wind_us(data_folder, epochs, input_timesteps, prediction_timestep, tes
 
     ### Model definition ###
     model = wind_models.MultidimConvNetwork(channels=input_timesteps, height=num_features, width=num_cities,
-                                            output_channels=num_output_channel, kernels_per_layer=16, hidden_neurons=128)
+                                            output_channels=num_output_channel, kernels_per_layer=kernels_per_layer,
+                                            hidden_neurons=hidden_neurons)
 
     # print("Parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
     summary(model, (input_timesteps, num_cities, num_features), device="cpu")
     # Put the model on GPU
     model.to(dev)
     # Define optimizer
-    lr = 0.001
-    opt = optim.Adam(model.parameters(), lr=lr)
+    opt = optim.Adam(model.parameters(), lr=learning_rate)
     # Loss function
     # loss_func = F.mse_loss
     loss_func = F.l1_loss
@@ -137,16 +138,20 @@ if __name__ == "__main__":
     
     
     # Parameters:
-    num_features = 11
+    num_features = 6
     num_cities = 29
     city_idx = 0
     feature_idx = 4
-    epochs = 250
+    epochs = 1
     test_size = 8813
-    train_model = False
+    train_model = True
+
+    learning_rate = 0.001
+    kernels_per_layer = 16
+    hidden_neurons = 512
 
     input_timesteps = 6
-    prediction_timesteps = 4
+    prediction_timesteps = 16
     early_stopping = 20
     data = "../processed_dataset/dataset_tensor.npy"
     load_model_path = "models/checkpoints/model_MultidimConvNetwork.pt"
@@ -161,7 +166,8 @@ if __name__ == "__main__":
         train_wind_us(data, num_cities=num_cities, test_size=test_size, num_features=num_features, 
                             city_idx=city_idx, feature_idx=feature_idx, epochs=epochs, 
                             input_timesteps=input_timesteps, prediction_timestep=prediction_timesteps, 
-                            dev=dev, earlystopping=early_stopping)
+                            dev=dev, earlystopping=early_stopping, learning_rate=learning_rate,
+                            kernels_per_layer=kernels_per_layer, hidden_neurons=hidden_neurons)
 
 
     ### Test the newly trained model ###
